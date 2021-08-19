@@ -105,6 +105,7 @@ position = {
 
 }
 
+
 url = 'http://apis.data.go.kr/1360000/AsosHourlyInfoService/getWthrDataList'
 queryParams = '?' + urlencode({ quote_plus('ServiceKey') : 'ol01kPg%2BpHOWuQZmRQmSc%2FtoW07yZ%2BZMGDokNgR2Q2F7rsx8wmL7D3j1QSOKsyZm0Am%2F0ko6FHX%2FZye2sXyQAQ%3D%3D', 
                                quote_plus('pageNo') : '1', 
@@ -116,14 +117,13 @@ queryParams = '?' + urlencode({ quote_plus('ServiceKey') : 'ol01kPg%2BpHOWuQZmRQ
                                quote_plus('startHh') : '01', #시작 시각
                                quote_plus('endDt') : '20100101', #종료 날짜 
                                quote_plus('endHh') : '02',  # 종료 시각
-                               quote_plus('stnIds') : '108' })# 지역번호
+                               quote_plus('stnIds') : '108'}) # 지역번호
 req = urllib.request.Request(url + unquote(queryParams))
 response_body = urlopen(req).read()
 dic=json.loads(response_body)
 print(dic)
 
 ''''
-어떤 지역에 몇 번의 지역번호를 가지고 있는지 딕셔너리로 구현 키 = 지역 이름, 벨류를 지역번호
 들어온 텍스트에서 지역번호 찾아 입력 번호 검색핫 ㅜ 있게
 
 날짜와 시간 데이터에서 위의 형식으로 바꿔준다.
