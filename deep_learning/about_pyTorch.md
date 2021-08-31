@@ -709,10 +709,10 @@ reference: https://wikidocs.net/book/2788
 >   ```python
 >   import torch
 >   import torch.nn.functional as F
->   
+>                   
 >   from torch.utils.data import Dataset
 >   from torch.utils.data import DataLoader
->   
+>                   
 >   class CustomDataset(Dataset):
 >       def __init__(self):
 >           self.x_data = [[1, 2, 3],
@@ -720,43 +720,211 @@ reference: https://wikidocs.net/book/2788
 >                         [7, 8, 9].
 >                         [10, 11, 12]]
 >           self.y_data = [[1], [2], [3], [4]]
->           
+>                           
 >       def __len__(self):
 >           return len(self.x_data)
->       
+>                       
 >       def __getitem__(self, idx):
 >           x = torch.FloatTensor(self.x_data[idx])
 >           y = torch.Floattensor(self.y_data[idx])
 >           return (x, y)
->       
+>                       
 >   if __name__ == "__main__":
 >       dataset = CustomDataset()
 >       dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
->       
+>                       
 >       model = torch.nn.Linear(3, 1)
 >       optimizer = torch.optim.SGD(model.parameters(), lr=1e-5)
->       
+>                       
 >       nb_epochs = 20
 >       for epoch in range(nb_epochs + 1):
 >           for batch_idx, samples, in enumerate(dataloader):
 >               x_train, y_train = samples
->               
+>                               
 >               prediction = model(x_train)
 >               cost = F.mse_loss(prediction, y_train)
->               
+>                               
 >               optimizer.zero_grad()
 >               cost.backward()
 >               optimizer.step()
->               
+>                               
 >               print("Epoch: ...")
->               
+>                               
 >       new_var = torch.FloatTensor([[73, 80, 75]])
 >       pred_y = model(new_var)
 >       print("훈련 후 입력이 73, 80, 75일때 예측값: ", pred_y)
->       
+>                       
 >   ```
 
 ### Logstic Regression
 
+> 두 개의 선택지 중에서 정답을 고르는 문제 - 이진분류
+>
+> 선형회귀에서의 H(x) = Wx + b가 아니라 S자 모양의 시그모이드 함수를 사용해야 함
 
+#### SIgmoid function
+
+> H(x) = sigmiod(Wx+b) = 1/(1+e^-(Wx+b)) = sigma(Wx + b)
+>
+> * W와 b의 의미를 알아보자
+>
+>   ```python
+>   import numpy as np   
+>   import matplotlib.pyplot as plt   
+>
+>   def sigmoid(x, w, b):   
+>       return 1/(1 + np.exp(-x*w+b))   
+>
+>   x = np.arange(-5.0, 5.0, 0.1)   
+>   y1 = sigmoid(x, 0.5, 0)   
+>   y2 = sigmoid(x, 1, 0)    
+>   y3 = sigmoid(x, 2, 0)    
+>
+>   plt.plot(x, y1, "r", linestyle='--')   
+>   plt.plot(x, y2, 'g')   
+>   plt.plot(x, y3, 'b', linestyle='--')   
+>   plt.plot([0, 0], [1.0, 0.0], ":")   
+>   plt.title("sigmoid function")   
+>   plt.show()   
+>   ```
+>   ```python
+>   import numpy as np   
+>   import matplotlib.pyplot as plt   
+>
+> 	  def sigmoid(x, w, b):   
+>       return 1/(1 + np.exp(-x*w+b))   
+>
+> 	x = np.arange(-5.0, 5.0, 0.1)   
+>   y1 = sigmoid(x, 1, -5)   
+>   y2 = sigmoid(x, 1, 0)   
+>   y3 = sigmoid(x, 1, 5)   
+>
+> 	plt.plot(x, y1, "r", linestyle='--')   
+>   plt.plot(x, y2, 'g')   
+>   plt.plot(x, y3, 'b', linestyle='--')   
+>   plt.plot([0, 0], [1.0, 0.0], ":")   
+>   plt.title("sigmoid function")   
+>   plt.show()   
+>
+>   ```
+>
+>  * W값이 커질수록 그래프가 급격하게 증가한다
+>   * b값에 따라 그래프가 좌우로 이동한다
+>
+> * sigmoid 함수의 Cost function
+>
+>  선형회귀에서 사용했던 평균 제곱 오차를 cost function으로 사용할 경우 여러 개의 극소값을 가지게 된다.
+>
+>  -> cost function으로 log함수를 사용한다
+>
+> y = 1 -> cost(H(x), y) = -log(H(x))
+>
+> y = 0 -> cost(H(x), y) = -log(1-H(x))
+>
+> -> cost(H(x), y) = [ylogH(x) + (1-y)log(1-H(x))]
+>
+> cost(W) = -1/n * sigma(y_i * logH(x_i) + (1 - y_i)log(1-H(x_i)))
+
+#### Logistic regression 
+
+> ```python
+> import torch
+> import torch.nn as nn
+> import torch.nn.functional as F
+> import torch.optim as optim
+> 
+> x_data = [[1, 2], [2, 3], [3, 4], [4, 3], [5, 3], [6, 2]]
+> y_data = [[0], [0], [0], [1], [1], [1]]
+> 
+> x_train = torch.FLoatTensor(x_data)
+> y_train = torch.FloatTensor(y_data)
+> 
+> W = torch.zeros((2, 1), requires_grad=True)
+> b = torch.zeros(1, requries_grad=True)
+> 
+> optimizer = optim.SGD([W, b], lr=1)
+> 
+> nb_epoch = 1000
+> for epoch in range(nb_epoch):
+>     hypothesis = 1 / (1 + torch.exp(-(x_train.matmul(W) + b)))
+> 	# hypothesis = torch.sigmoid(x_train.matmul(W) + b)
+>     
+>     cost = -(y_train * torch.log(hypothesis) + (1-y_train) * torch.log(1 - hypothesis)).mean()
+>     # cost = F.binary_cross_entropy(hypothesis, y_train)
+> 	
+>     optimizer.zeor_grad()
+>     cost.backward()
+>     optimizer.step()
+> 
+> x_test = [[10, 20], [20, 30], [3, 40], [64, 36], [54, 34], [63, 22]]
+> hypothesis = torch.sigmoid(x_test.matmul(W) + b)
+> print(hypothesis) # 값 반환
+> ```
+
+#### Logistic regression with nn.Module
+
+> ```python
+> import torch
+> import torch.nn as nn
+> import torch.nn.functional as F
+> import torch.optim as optim
+> 
+> x_data = [[1, 2], [2, 3], [3, 4], [4, 3], [5, 3], [6, 2]]
+> y_data = [[0], [0], [0], [1], [1], [1]]
+> 
+> x_train = torch.FLoatTensor(x_data)
+> y_train = torch.FloatTensor(y_data)
+> 
+> model = nn.Sequential(nn.Linear(2, 1), # input dim = 2, output dim = 1 
+>                       nn.Sigmoid()) # 출력은 시그모이드 함수를 거친다
+> 
+> nb_epochs = 1000
+> for epochs in range(nb_epochs):
+>     hypothesis = model(x_train)
+>     
+>     cost = F.binary_cross_entropy(hypothesis, y_train)
+>     
+>     optimizer.zero_grad()
+>     cost.backward()
+>     optimizer.step()
+>     
+>     # prediction = (hypothesus >= torch.FloatTensor([0.5]))
+>     # 0.5를 넘으면 True간주
+>     # correct_prediction = (prediction.float() == y_train)
+>     # 실제값과 일치하면 True로 
+>     # accuracy = correct_prediction.sum().item() / len(correct_prediction)
+>     # 정확도 계산
+>     
+> print(list(model.parameters()))
+> # W와 b를 출력
+> ```
+
+#### Logistic regression with class
+
+> ```python
+> import torch
+> import torch.nn as nn
+> import torch.nn.functional as F
+> import torch.optim as optim
+> 
+> class BinaryClassifier(nn.Module):
+>     def __init__(self):
+>         super().__init__() # nn.Module의 속성들을 가지고 초기화
+>         self.linear = nn.Linear(2, 1)
+>         self.sigmoid = nn.Sigmoid()
+>         
+>     def forward(self, x):
+>         return self.sigmoid(self.linear(x))
+> 
+> if __name__ == "__main__":
+>     x_data = [[1, 2], [2, 3], [3, 4], [4, 3], [5, 3], [6, 2]]
+> 	y_data = [[0], [0], [0], [1], [1], [1]]
+> 
+> 	x_train = torch.FLoatTensor(x_data)
+> 	y_train = torch.FloatTensor(y_data)
+>     
+>     model = BinaryClassifier()
+>     # 이하동일
+
+### Aritificial Neural Network
 
